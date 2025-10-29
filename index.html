@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>페널티 킥 게임</title>
+  <style>
+    body { background-color: #16a34a; font-family: Arial, sans-serif; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+    .kicker, .keeper { width: 64px; height: 128px; display: flex; align-items: center; justify-content: center; border-radius: 8px; position: relative; }
+    .goal { width: 288px; height: 160px; background: white; border: 4px solid gray; border-radius: 8px; display: flex; align-items: flex-end; justify-content: center; position: relative; }
+    .button { padding: 4px 8px; margin: 2px; background-color: #3b82f6; border: none; border-radius: 4px; cursor: pointer; color: white; }
+    .button:hover { background-color: #2563eb; }
+    select { margin: 2px; padding: 2px; border-radius: 4px; }
+    .number, .label { position: absolute; font-weight: bold; }
+    .number { top: 4px; font-size: 1rem; }
+    .label { bottom: 4px; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <h1>⚽ 페널티 킥 게임 ⚽</h1>
+  <p id="round">라운드: 1 / 10</p>
+
+  <div>
+    <select id="mySet"></select>
+    <select id="myNumber"></select>
+    <select id="opponentSet"></select>
+    <select id="opponentNumber"></select>
+  </div>
+
+  <div style="display:flex; gap:32px; margin:16px; align-items:center;">
+    <div class="kicker" id="myKicker"><div class="label" id="myKickerLabel">킥커</div><div class="number" id="myKickerNumber">10</div></div>
+    <div class="goal"><div class="keeper" id="keeper">GK</div></div>
+    <div class="kicker" id="opponentKicker"><div class="label" id="opponentKickerLabel">킥커</div><div class="number" id="opponentKickerNumber">10</div></div>
+  </div>
+
+  <div id="buttons"></div>
+  <p id="message">우리 팀 차례입니다! 방향을 선택하세요 ⚽</p>
+  <div id="score" style="display:flex; gap:32px;"><p id="myScore">우리 팀 점수: 0</p><p id="opponentScore">상대 팀 점수: 0</p></div>
+
+  <script>
+    const directions = ['왼쪽 위', '왼쪽 아래', '가운데 위', '가운데 아래', '오른쪽 위', '오른쪽 아래'];
+    const colorSets = {
+      1: { name: '아스날', kicker: '#dc2626', keeper: '#84cc16' },
+      2: { name: '리버풀', kicker: '#991b1b', keeper: '#fde047' },
+      3: { name: '맨체스터 시티', kicker: '#38bdf8', keeper: '#f472b6' },
+      4: { name: '첼시', kicker: '#2563eb', keeper: '#f97316' },
+      5: { name: '닭집', kicker: '#ffffff', keeper: '#000000' }
+    };
+
+    let myScore = 0;
+    let opponentScore = 0;
+    let round = 1;
+
+    const mySetSelect = document.getElementById('mySet');
+    const myNumberSelect = document.getElementById('myNumber');
+    const opponentSetSelect = document.getElementById('opponentSet');
+    const opponentNumberSelect = document.getElementById('opponentNumber');
+    const myKicker = document.getElementById('myKicker');
+    const myKickerLabel = document.getElementById('myKickerLabel');
+    const myKickerNumber = document.getElementById('myKickerNumber');
+    const opponentKicker = document.getElementById('opponentKicker');
+    const opponentKickerLabel = document.getElementById('opponentKickerLabel');
+    const opponentKickerNumber = document.getElementById('opponentKickerNumber');
+    const keeper = document.getElementById('keeper');
+    const message = document.getElementById('message');
+    const myScoreEl = document.getElementById('myScore');
+    const opponentScoreEl = document.getElementById('opponentScore');
+    const roundEl = document.getElementById('round');
+    const buttonsDiv = document.getElementById('buttons');
+
+    for (let i=1;i<=5;i++) {
+      mySetSelect.innerHTML += `<option value="${i}">${i}세트 (${colorSets[i].name})</option>`;
+      opponentSetSelect.innerHTML += `<option value="${i}">${i}세트 (${colorSets[i].name})</option>`;
+    }
+    for (let i=1;i<=99;i++) {
+      myNumberSelect.innerHTML += `<option value="${i}">${i}</option>`;
+      opponentNumberSelect.innerHTML += `<option value="${i}">${i}</option>`;
+    }
+
+    function updateKickerAppearance() {
+      const mySet = mySetSelect.value;
+      const opponentSet = opponentSetSelect.value;
+      const myNumber = myNumberSelect.value;
+      const opponentNumber = opponentNumberSelect.value;
+
+      myKicker.style.backgroundColor = colorSets[mySet].kicker;
+      opponentKicker.style.backgroundColor = colorSets[opponentSet].kicker;
+      keeper.style.backgroundColor = colorSets[opponentSet].keeper;
+
+      myKickerNumber.textContent = myNumber;
+      opponentKickerNumber.textContent = opponentNumber;
+
+      if (mySet==5) { myKickerNumber.style.color = '#1e3a8a'; myKickerLabel.style.color = '#1e3a8a'; }
+      else { myKickerNumber.style.color='white'; myKickerLabel.style.color='white'; }
+      if (opponentSet==5) { opponentKickerNumber.style.color = '#1e3a8a'; opponentKickerLabel.style.color = '#1e3a8a'; }
+      else { opponentKickerNumber.style.color='white'; opponentKickerLabel.style.color='white'; }
+    }
+
+    mySetSelect.onchange = updateKickerAppearance;
+    opponentSetSelect.onchange = updateKickerAppearance;
+    myNumberSelect.onchange = updateKickerAppearance;
+    opponentNumberSelect.onchange = updateKickerAppearance;
+
+    updateKickerAppearance();
+
+    directions.forEach(dir => {
+      const btn = document.createElement('button');
+      btn.textContent = dir;
+      btn.className='button';
+      btn.onclick = () => {
+        if(Math.random()<0.7){ myScore++; message.textContent=`우리 팀의 ${dir} 슛 성공! ⚽`; }
+        else{ message.textContent=`우리 팀의 ${dir} 슛이 막혔습니다! 🧤`; }
+        myScoreEl.textContent = `우리 팀 점수: ${myScore}`;
+        setTimeout(opponentShoot,1500);
+      };
+      buttonsDiv.appendChild(btn);
+    });
+
+    function opponentShoot(){
+      const dir = directions[Math.floor(Math.random()*directions.length)];
+      const opponentSet = opponentSetSelect.value;
+      if(Math.random()<0.7){ opponentScore++; message.textContent=`상대 팀의 ${dir} 슛 성공! ⚽`; }
+      else{ message.textContent=`상대 팀의 ${dir} 슛이 막혔습니다! 🧤`; }
+      opponentScoreEl.textContent = `상대 팀 점수: ${opponentScore}`;
+      round++;
+      roundEl.textContent = `라운드: ${round} / 10`;
+      updateKickerAppearance();
+      if(round>10){
+        if(myScore>opponentScore) message.textContent=`경기 종료! 우리 팀 승리! 🏆`;
+        else if(myScore<opponentScore) message.textContent=`경기 종료! 상대 팀 승리! 😢`;
+        else message.textContent=`경기 종료! 무승부 🤝`;
+        buttonsDiv.querySelectorAll('button').forEach(b=>b.disabled=true);
+      }
+    }
+  </script>
+</body>
+</html>
